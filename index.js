@@ -66,7 +66,7 @@ const showWithOptions = function (options) {
     RCTToast.show(options);
 };
 
-const showToast = function (message, duration, position) {
+const showToast = function (message, duration, position, styling) {
     showWithOptions(
       optionsBuilder()
           .withMessage(message || '未知数据')
