@@ -1,9 +1,28 @@
 package com.remobile.toast;
 
 import android.view.Gravity;
+import android.util.Log;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
+import android.os.CountDownTimer;
+import android.text.Layout;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.AlignmentSpan;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import com.facebook.common.logging.FLog;
 import com.facebook.react.bridge.*;
+
+
 
 public class Toast extends ReactContextBaseJavaModule implements LifecycleEventListener {
 
@@ -26,12 +45,11 @@ public class Toast extends ReactContextBaseJavaModule implements LifecycleEventL
         if (this.isPaused) {
             return;
         }
-
-
+        final ReadableMap styling = options.getMap("styling");
         final String message = options.getString("message");
         final String duration = options.getString("duration");
         final String position = options.getString("position");
-        final int addPixelsY = options.hasKey("addPixelsY") ? options.getInt("addPixelsY") : 0;
+      final int addPixelsY = options.hasKey("addPixelsY") ? options.getInt("addPixelsY") : 0;
 
         UiThreadUtil.runOnUiThread(new Runnable() {
             public void run() {
@@ -50,6 +68,37 @@ public class Toast extends ReactContextBaseJavaModule implements LifecycleEventL
                     FLog.e("RCTToast", "invalid position. valid options are 'top', 'center' and 'bottom'");
                     return;
                 }
+
+              if (styling != null && Build.VERSION.SDK_INT >= 16) {
+
+                // the defaults mimic the default toast as close as possible
+                final String backgroundColor = styling.getString("backgroundColor");
+                final String textColor = styling.getString("textColor");
+                final Double textSize = styling.getDouble("textSize");
+                final double opacity = styling.getDouble("opacity");
+                final int cornerRadius = styling.getInt("cornerRadius");
+                final int horizontalPadding = styling.getInt("horizontalPadding");
+                final int verticalPadding = styling.getInt("verticalPadding");
+                GradientDrawable shape = new GradientDrawable();
+                shape.setCornerRadius(cornerRadius);
+                shape.setAlpha((int)(opacity * 255)); // 0-255, where 0 is an invisible background
+                shape.setColor(Color.parseColor(backgroundColor));
+                toast.getView().setBackground(shape);
+
+                final TextView toastTextView;
+                toastTextView = (TextView) toast.getView().findViewById(android.R.id.message);
+                toastTextView.setTextColor(Color.parseColor(textColor));
+                if (textSize > -1) {
+                  toastTextView.setTextSize(textSize.floatValue());
+                }
+                toast.getView().setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+
+                // this gives the toast a very subtle shadow on newer devices
+                if (Build.VERSION.SDK_INT >= 21) {
+                  toast.getView().setElevation(6);
+                }
+              }
+
 
                 toast.show();
                 mostRecentToast = toast;
